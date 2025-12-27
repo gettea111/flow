@@ -1,0 +1,7 @@
+{
+  "name": "Flow State - Calibrate",
+  "description": "A minimalist onboarding experience for the Flow State app, focusing on the RAS cognitive mechanism through an interactive signal-tuning metaphor.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

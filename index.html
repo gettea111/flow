@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Flow State - Signal Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;500&family=Noto+Sans+SC:wght@200;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #000; --primary: #ffffff; }
+    body {
+      background-color: var(--bg);
+      color: #fafafa;
+      font-family: 'Noto Sans SC', sans-serif;
+      margin: 0;
+      overflow: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* 装饰背景层 */
+    .wave-bg {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 3px);
+      z-index: -10;
+      pointer-events: none;
+    }
+    #stars {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #111, #000);
+      z-index: -20;
+      opacity: 0.3;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    /* 倒计时圆环 */
+    .timer-svg {
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+    .timer-ring-circle {
+      transition: stroke-dashoffset 1s linear;
+      stroke-dasharray: 565;
+      stroke-dashoffset: 0;
+    }
+
+    /* === 核心视觉升级：电影级对焦动画 === */
+    .animate-cinematic-focus {
+      animation: cinematic-focus 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    }
+    @keyframes cinematic-focus {
+      0% { filter: blur(15px); opacity: 0; letter-spacing: 0.5em; transform: scale(1.05); }
+      50% { opacity: 0.6; }
+      100% { filter: blur(0px); opacity: 1; letter-spacing: normal; transform: scale(1); }
+    }
+
+    /* 文字逐字浮现动画 (Blur Reveal) */
+    @keyframes char-reveal-blur {
+      0% { opacity: 0; filter: blur(5px); transform: translateY(1px); }
+      100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+    }
+    .char-reveal {
+      animation: char-reveal-blur 0.8s ease-out forwards;
+      display: inline-block;
+      white-space: pre-wrap; 
+    }
+
+    /* 打字粒子闪烁 - Ultra subtle */
+    @keyframes typing-spark {
+      0% { opacity: 0; transform: scale(0); }
+      30% { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+    }
+    .typing-spark {
+      position: absolute;
+      width: 2px; height: 2px; 
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: typing-spark 1s ease-out forwards;
+    }
+
+    /* 呼吸对焦效果 */
+    .breathing-focus {
+      animation: breath-focus 4s infinite ease-in-out;
+    }
+    @keyframes breath-focus {
+      0%, 100% { filter: blur(0px); transform: scale(1); }
+      50% { filter: blur(1px); transform: scale(1.02); }
+    }
+
+    /* 准星锁定动画 */
+    .animate-reticle-snap { animation: reticle-snap 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+    @keyframes reticle-snap {
+      0% { width: 300px; height: 300px; opacity: 0; transform: rotate(45deg) scale(1.5); border-color: rgba(255,255,255,0); }
+      40% { opacity: 1; border-color: rgba(255,255,255,0.8); }
+      100% { width: 80px; height: 80px; opacity: 1; transform: rotate(0deg) scale(1); border-color: rgba(255,255,255,0.3); }
+    }
+
+    /* 十字线展开 */
+    .animate-crosshair-x { animation: crosshair-x 0.8s ease-out forwards; }
+    .animate-crosshair-y { animation: crosshair-y 0.8s ease-out forwards; }
+    @keyframes crosshair-x { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 0.3; } }
+    @keyframes crosshair-y { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 0.3; } }
+
+    /* 粒子飞行动画 */
+    @keyframes particle-fly {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; box-shadow: 0 0 10px white; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+    .particle {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 2px; height: 2px;
+      background: white;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: particle-fly 1s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    }
+    
+    /* 漂浮粒子 (Ambient) */
+    @keyframes float-particle {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      50% { opacity: 0.5; }
+      100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+    }
+    .ambient-particle {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float-particle 8s infinite linear;
+    }
+
+    /* 信号发射增强动画 */
+    @keyframes beam-manifest {
+      0% { height: 0; width: 2px; opacity: 0; transform: translateX(-50%) translateY(50%); filter: brightness(1); }
+      20% { height: 150vh; width: 4px; opacity: 1; filter: brightness(2); }
+      100% { height: 250vh; width: 1px; opacity: 0; transform: translateX(-50%) translateY(-150%); filter: brightness(5); }
+    }
+    @keyframes ripple-expand {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; border-width: 8px; }
+      20% { opacity: 0.6; }
+      100% { transform: translate(-50%, -50%) scale(4); opacity: 0; border-width: 1px; }
+    }
+    @keyframes bg-flash {
+      0%, 100% { background-color: #000; }
+      50% { background-color: #111; }
+    }
+    @keyframes recording-pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+
+    /* === 思维潜入转场 (Mind Dive) === */
+    .mind-dive-out {
+      animation: dive-out 0.8s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+    .mind-dive-in {
+      animation: dive-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    
+    @keyframes dive-out {
+      0% { transform: scale(1); filter: blur(0px); opacity: 1; }
+      100% { transform: scale(2.5); filter: blur(20px); opacity: 0; }
+    }
+    
+    @keyframes dive-in {
+      0% { transform: scale(0.8); filter: blur(15px); opacity: 0; }
+      100% { transform: scale(1); filter: blur(0px); opacity: 1; }
+    }
+
+    .signal-beam {
+      position: fixed;
+      bottom: -10vh; left: 50%;
+      background: linear-gradient(to top, transparent, #fff, #fff, #fff, transparent);
+      z-index: 40;
+      pointer-events: none;
+      display: none;
+      filter: blur(2px);
+      box-shadow: 0 0 50px #fff, 0 0 100px rgba(255,255,255,0.5);
+    }
+    .signal-beam.active { display: block; animation: beam-manifest 2.5s cubic-bezier(0.15, 0, 0.15, 1) forwards; }
+
+    .energy-ripple {
+      position: fixed;
+      top: 50%; left: 50%;
+      width: 50vmax; height: 50vmax;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      z-index: 35;
+      pointer-events: none;
+      display: none;
+      transform: translate(-50%, -50%) scale(0);
+    }
+    .energy-ripple.active { display: block; animation: ripple-expand 2s ease-out forwards; }
+
+    /* 日历网格 */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+    .cal-day {
+      aspect-ratio: 1/1;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      border-radius: 2px;
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .cal-day.active {
+      background: #fff;
+      box-shadow: 0 0 15px rgba(255,255,255,0.5);
+      border-color: #fff;
+      transform: scale(1.05);
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .voice-recording-active {
+      animation: recording-pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+      background: rgba(255, 255, 255, 0.2) !important;
+      border-color: #fff !important;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .flicker-slow { animation: flicker 8s infinite; }
+    @keyframes flicker {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    
+    /* 观测状态背景 */
+    .observing-bg { animation: bg-flash 6s infinite ease-in-out; }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="beam" class="signal-beam"></div>
+  <div id="ripple1" class="energy-ripple"></div>
+  <div id="ripple2" class="energy-ripple" style="animation-delay: 0.4s"></div>
+  <div class="wave-bg"></div>
+  <div id="stars"></div>
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
+</body>
+</html>
